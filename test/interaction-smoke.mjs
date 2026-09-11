@@ -334,6 +334,8 @@ const third = await openSheet(SESSION);
 assert(text().includes("无法读取当前对话的团队"), "an unreadable roster says so");
 assert(text().includes("boom"), "the unreadable-roster row carries the host's reason");
 assert(text().includes("尚未创建队员") === false, "an unreadable roster does not make the false empty claim");
+assert((third.container.querySelector(".atm_trigger")?.getAttribute("title") ?? "").includes("boom"),
+	"the chip carries the failed-read reason, so a missing upstream is visible before opening the dialog");
 
 await act(async () => {
 	third.root.unmount();

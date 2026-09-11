@@ -2,7 +2,7 @@
 
 为 DeepSeek Harness Agent Teams 提供可视化的队员模型配置：按默认规则或队员名选择 provider、model 和 reasoning effort，并在当前会话中查看团队状态与每个队员实际使用的路由。
 
-> 当前版本：`0.3.1`
+> 当前版本：`0.3.2`
 >
 > 已验证 DSH：`0.1.5-alpha.2`
 >
