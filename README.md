@@ -18,6 +18,20 @@
 - 队员自己的会话只显示自身信息，并保持只读；不会暴露队长配置或其他队员。
 - 配置保存在 `$DSH_HOME/agent-team-model.json`，下一次创建队员时生效。
 
+## 界面截图
+
+**队员模型面板**——启用开关、默认队员路由、按队员名覆盖，以及当前对话的团队。
+
+<img src="assets/team-model-panel.png" width="440" alt="队员模型面板：启用队员路由覆盖、默认队员路由、按队员名覆盖、当前对话的团队">
+
+**选择模型**——模型列表来自宿主当前的 provider 目录。
+
+<img src="assets/model-picker.png" width="440" alt="Model 下拉：DeepSeek-V41-Flash、DeepSeek-V4-Flash、DeepSeek-V4-Pro、DeepSeek-V4-Flash-Vision-Exp">
+
+**选择推理强度**——「模型默认」让所选模型使用自己的默认值，而不是沿用队长的强度；Provider 选「继承队长」则完全不注入路由。
+
+<img src="assets/effort-picker.png" width="440" alt="Reasoning effort 下拉：模型默认 · high、Off、Low、High、Max">
+
 ## 安装
 
 从 GitHub 安装到 Web profile：
