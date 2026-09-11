@@ -1,6 +1,6 @@
 {
   "name": "dsh-agent-team-model",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Choose default and per-name provider, model, and reasoning effort for newly created DeepSeek Harness Agent Teams teammates, with live team status and restart-safe route views.",
   "license": "MIT",
   "author": "XMeow",

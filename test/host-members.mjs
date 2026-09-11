@@ -107,7 +107,7 @@ assert((await readMembers(ctx, "session-sub")).members.length === 0 && (await re
 
 const noTeams = { get: (service) => (service === "agents" ? agents : undefined) };
 const movedTeams = await readMembers(noTeams, "session-a");
-assert(movedTeams.members.length === 0 && typeof movedTeams.error === "string", `a host without the Agent Teams face reports an error, not a false empty roster (got ${JSON.stringify(movedTeams.error)})`);
+assert(movedTeams.members.length === 0 && typeof movedTeams.error === "string" && movedTeams.error.includes("@deepseek-ai/dsh-experimental-agent-team-profile"), `a host without the Agent Teams face reports an error naming the missing upstream, not a false empty roster (got ${JSON.stringify(movedTeams.error)})`);
 
 // ── route enrichment ───────────────────────────────────────────────────────
 const leadRow = aRoster.members[0];

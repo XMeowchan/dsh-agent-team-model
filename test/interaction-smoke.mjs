@@ -354,6 +354,22 @@ await act(async () => {
 });
 fourth.container.remove();
 
+// ── profile without the official Agent Teams layer ─────────────────────────
+// The missing prerequisite must be named, not reported as a plain seam gap: the
+// plugin configures teammate routes, teammates come from the upstream layer.
+hostView.members = [];
+hostView.hook = { installed: false, subagents: true, agentTeams: false };
+const noUpstream = await openSheet(SESSION);
+
+assert(text().includes("@deepseek-ai/dsh-experimental-agent-team-profile"), "a profile without the Agent Teams layer is told which package to install");
+assert(text().includes("重启 DSH 宿主后再看") === false, "the missing upstream is not reported as a plain restart symptom");
+
+await act(async () => {
+	noUpstream.root.unmount();
+});
+noUpstream.container.remove();
+hostView.hook = { installed: true, subagents: true, agentTeams: true, injections: 2, lastInjectionAt: Date.now() - 1000 };
+
 // ── older host that reports neither membersError nor injection counters ────
 // This is exactly the shape the currently mounted host half answers with, so the
 // browser half must degrade quietly instead of warning about a seam it cannot see.
