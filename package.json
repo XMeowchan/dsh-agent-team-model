@@ -1,0 +1,59 @@
+{
+  "name": "dsh-agent-team-model",
+  "version": "0.3.0",
+  "description": "Choose default and per-name provider, model, and reasoning effort for newly created DeepSeek Harness Agent Teams teammates, with live team status and restart-safe route views.",
+  "license": "MIT",
+  "author": "XMeow",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/XMeowchan/dsh-agent-team-model.git"
+  },
+  "homepage": "https://github.com/XMeowchan/dsh-agent-team-model#readme",
+  "bugs": {
+    "url": "https://github.com/XMeowchan/dsh-agent-team-model/issues"
+  },
+  "scripts": {
+    "check": "node --check lib/index.js && node --check lib/team-view.js && node --check lib/client.js",
+    "test": "npm run check && node test/host-members.mjs && node test/host-restart.mjs",
+    "test:ui": "node test/render-smoke.mjs lib/client.js && node test/interaction-smoke.mjs lib/client.js && node test/viewer-smoke.mjs lib/client.js"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/team-view.js",
+    "lib/client.js",
+    "cordis.patch.yml",
+    "LICENSE",
+    "README.md"
+  ],
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "agent-teams",
+    "web-ui"
+  ],
+  "engines": {
+    "node": ">=18",
+    "dsh": ">=0.1.5-alpha.2 <0.2.0-0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true
+    }
+  }
+}

@@ -1,0 +1,16 @@
+node_modules/
+*.tgz
+
+# Local audit evidence and generated artifacts
+_evidence/
+output/
+patches/
+docs/
+.playwright-cli/
+
+# Local-only visual tooling with machine-specific browser paths
+test/icon-options.mjs
+test/live-dialog-shot.mjs
+test/preview.mjs
+test/style-ownership-live.mjs
+test/style-ownership-regression.mjs
