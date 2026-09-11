@@ -109,7 +109,7 @@ function assertOwnOnly(label) {
 	assert.match(body(), /my-researcher/, `${label}: own name`);
 	assert.match(body(), /Own Model Label/, `${label}: catalog model label`);
 	assert.match(body(), /high/, `${label}: actual effort, not catalog default`);
-	assert.match(body(), /未运行（可恢复）/, `${label}: resumable status`);
+	assert.match(body(), /待机\/未委派任务/, `${label}: resumable status`);
 	assert.doesNotMatch(body(), /默认队员路由|按队员名覆盖|当前对话的团队|最近注入的路由|配置存储|启用队员路由覆盖|清空记录|保存/,
 		`${label}: no global editor, roster, history, or mutation action`);
 	assert.doesNotMatch(body(), /private-leader|private-sibling|private-history|parent-only-model|Parent Model Label|sibling-only-model/,
@@ -117,13 +117,13 @@ function assertOwnOnly(label) {
 	assert.equal(document.querySelectorAll('.atm_picker, input, select, [role="switch"]').length, 0, `${label}: no fake editable controls`);
 }
 
-// Leader: count only running teammates, not lead/idle/inactive; retained routes aren't seam failures.
+// Leader: count durable completed work across teammates; retained routes aren't seam failures.
 let mounted = await mount(composer, LEAD_ID);
-assert.equal(trigger().textContent.trim(), "1/3 个队员正在工作");
+assert.equal(trigger().textContent.trim(), "0/3 个队员已完成");
 await click(trigger());
 assert.doesNotMatch(body(), /注入接缝|没有记录到任何路由注入/);
 const persistedRow = [...document.querySelectorAll(".atm_row")].find((row) => row.textContent.includes("my-researcher"));
-assert.match(persistedRow.textContent, /未运行（可恢复）/);
+assert.match(persistedRow.textContent, /待机\/未委派任务/);
 assert.match(persistedRow.querySelector(".atm_rowValue").title, /保存|持久化/);
 const unknownRow = [...document.querySelectorAll(".atm_row")].find((row) => row.textContent.includes("idle-member"));
 assert.match(unknownRow.textContent, /尚未获取模型/);
@@ -141,7 +141,7 @@ assert.match(body(), /默认队员路由/, "icon still opens the leader config p
 await mounted.close();
 views.set(LEAD_ID, { ...leaderView, members: [...leaderView.members, { id: "new", role: "teammate", status: "provisioning" }] });
 mounted = await mount(composer, LEAD_ID);
-assert.equal(trigger().textContent.trim(), "1/4 个队员正在工作", "provisioning increases total, not working numerator");
+assert.equal(trigger().textContent.trim(), "0/4 个队员已完成", "provisioning increases total, not completed numerator");
 await mounted.close();
 views.set(LEAD_ID, leaderView);
 console.log("PASS leader count and persisted/unknown routes");
@@ -149,7 +149,7 @@ console.log("PASS leader count and persisted/unknown routes");
 // New host's deliberately null config cannot become an editable default draft.
 const childStart = requests.length;
 mounted = await mount(composer, CHILD_ID);
-assert.equal(trigger().textContent.trim(), "未运行（可恢复） · 当前队员：Own Model Label");
+assert.equal(trigger().textContent.trim(), "待机/未委派任务 · 当前队员：Own Model Label");
 await click(trigger());
 assertOwnOnly("teammate Modal");
 assert.ok(body().includes(REASON));
@@ -164,7 +164,7 @@ console.log("PASS isolated read-only teammate with config:null");
 for (const status of ["idle", "inactive"]) {
 	views.set(CHILD_ID, { ...childView, members: [{ ...OWN, status, workState: "completed" }] });
 	mounted = await mount(composer, CHILD_ID);
-	assert.equal(trigger().textContent.trim(), "已完成 · 当前队员：Own Model Label");
+	assert.equal(trigger().textContent.trim(), "任务已完成 · 当前队员：Own Model Label");
 	await click(trigger());
 	assert.match(body(), /当前队员模型/);
 	assert.match(dialog().textContent, /已完成/);
@@ -173,7 +173,7 @@ for (const status of ["idle", "inactive"]) {
 }
 views.set(CHILD_ID, { ...childView, members: [{ ...OWN, status: "running", workState: "completed" }] });
 mounted = await mount(composer, CHILD_ID);
-assert.equal(trigger().textContent.trim(), "工作中 · 当前队员：Own Model Label", "new running turn overrides prior completed metadata");
+assert.equal(trigger().textContent.trim(), "正在执行任务 · 当前队员：Own Model Label", "new running turn overrides prior completed metadata");
 await mounted.close();
 views.set(CHILD_ID, childView);
 console.log("PASS completed teammate keeps own model identity and isolated panel");
@@ -181,7 +181,7 @@ console.log("PASS completed teammate keeps own model identity and isolated panel
 // Legacy host may send full team/global data: exact self-row inference still hides all of it.
 views.set(CHILD_ID, { ...leaderView, sessionId: CHILD_ID, viewer: undefined });
 mounted = await mount(composer, CHILD_ID);
-assert.equal(trigger().textContent.trim(), "未运行（可恢复） · 当前队员：Own Model Label");
+assert.equal(trigger().textContent.trim(), "待机/未委派任务 · 当前队员：Own Model Label");
 await click(trigger());
 assertOwnOnly("legacy teammate");
 assert.match(body(), /不支持|禁止/);
@@ -189,16 +189,16 @@ await mounted.close();
 // Explicit role wins over legacy inference; a nonmatching row never implies a child.
 views.set(LEAD_ID, { ...leaderView, viewer: undefined });
 mounted = await mount(composer, LEAD_ID);
-assert.equal(trigger().textContent.trim(), "1/3 个队员正在工作");
+assert.equal(trigger().textContent.trim(), "0/3 个队员已完成");
 await mounted.close();
 views.set(CHILD_ID, { ...leaderView, sessionId: CHILD_ID, viewer: { role: "lead" } });
 mounted = await mount(composer, CHILD_ID);
-assert.equal(trigger().textContent.trim(), "1/3 个队员正在工作");
+assert.equal(trigger().textContent.trim(), "0/3 个队员已完成");
 await mounted.close();
 views.set(LEAD_ID, leaderView);
 views.set(CHILD_ID, { ...childView, members: [{ ...OWN, model: LEAD.model, reasoningEffort: null, routeSource: "unavailable" }], effectiveDefault: leaderView.effectiveDefault });
 mounted = await mount(composer, CHILD_ID);
-assert.equal(trigger().textContent.trim(), "未运行（可恢复） · 当前队员：尚未获取模型");
+assert.equal(trigger().textContent.trim(), "待机/未委派任务 · 当前队员：尚未获取模型");
 await click(trigger());
 assert.match(body(), /尚未获取模型/);
 assert.doesNotMatch(body(), /parent-only-model|Parent Model Label|Own Model Label/);
@@ -217,7 +217,7 @@ for (const method of ["get", "set"]) {
 	const switchStart = requests.length;
 	await mounted.switchTo(CHILD_ID);
 	assert.equal(dialog(), null, "switch closes the old conversation's dialog");
-	assert.equal(trigger().textContent.trim(), "未运行（可恢复） · 当前队员：Own Model Label");
+	assert.equal(trigger().textContent.trim(), "待机/未委派任务 · 当前队员：Own Model Label");
 	await click(trigger());
 	assertOwnOnly(`switch during ${method}`);
 	hold = () => false;
@@ -226,7 +226,7 @@ for (const method of ["get", "set"]) {
 	assert.ok(requests.slice(switchStart).every((request) => request.method === "get" && request.sessionId === CHILD_ID), `old ${method} cannot write under child session`);
 	await mounted.switchTo(LEAD_ID);
 	assert.equal(dialog(), null);
-	assert.equal(trigger().textContent.trim(), "1/3 个队员正在工作");
+	assert.equal(trigger().textContent.trim(), "0/3 个队员已完成");
 	await mounted.close();
 }
 assert.ok(requests.every((request) => request.method !== "clear-recent"), "internal history has no clear action");

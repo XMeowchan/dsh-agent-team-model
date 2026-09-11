@@ -7,6 +7,9 @@
 // settings-page-only rows, and the team section is scoped to the conversation:
 // the Session id rides every request, the Lead is labelled 队长 on its own row
 // above a divider, teammates follow, and an empty roster says 尚未创建队员.
+// The composer chip counts finished teammates (x/n 个队员已完成) instead of who
+// happens to be resident, and every teammate row states its work state as
+// 待机 / 正在执行 / 已完成.
 //
 // Requires a module base with react, react-dom, jsdom and
 // @deepseek-ai/dsh-client-ui-primitives:
@@ -178,6 +181,11 @@ const assertCleanEditor = (label) => {
 const teamList = () => [...document.querySelectorAll("section.atm_group")]
 	.find((section) => (section.querySelector("h3")?.textContent ?? "") === "当前对话的团队")
 	?.querySelector(".atm_list") ?? null;
+/** The roster row that shows this member name. */
+const teamRow = (name) => [...(teamList()?.children ?? [])]
+	.find((node) => (node.textContent ?? "").includes(name)) ?? null;
+/** The status note line (队员 · …) of a roster row, by member name. */
+const rowNote = (name) => teamRow(name)?.querySelector(".atm_rowNote")?.textContent ?? "";
 
 /**
  * Mount the composer seat for one Session and open its dialog.
@@ -204,8 +212,8 @@ async function openSheet(sessionId) {
 const first = await openSheet(SESSION);
 
 assert(first.container.querySelector(".atm_trigger") !== null, "composer trigger renders through the DSH Button primitive");
-assert((first.container.querySelector(".atm_trigger")?.textContent ?? "").trim() === "1/1 个队员正在工作", `leader trigger shows running / total teammates (got "${first.container.querySelector(".atm_trigger")?.textContent ?? ""}")`);
-assert((first.container.querySelector(".atm_trigger")?.getAttribute("title") ?? "").includes("1/1 个队员正在工作"), "the trigger's accessible title states the working count");
+assert((first.container.querySelector(".atm_trigger")?.textContent ?? "").trim() === "0/1 个队员已完成", `leader trigger counts finished teammates out of the roster (got "${first.container.querySelector(".atm_trigger")?.textContent ?? ""}")`);
+assert((first.container.querySelector(".atm_trigger")?.getAttribute("title") ?? "").includes("0/1 个队员已完成"), "the trigger's accessible title states the completed count");
 
 assert(document.querySelector('[role="dialog"]') !== null, "secondary surface opens as a DSH Modal (role=dialog)");
 assert(document.querySelector(".atm_sheetCard") !== null, "the dialog bounds itself through Modal's className seam");
@@ -276,6 +284,8 @@ assert(text().includes("尚未创建队员") === false, "a conversation with tea
 assert(text().includes("注入接缝") === false, "a host that has injected before raises no seam warning");
 
 assert(text().includes("researcher") && text().includes("deepseek-v4-pro"), "member row shows the live route");
+assert(rowNote("researcher") === "队员 · 正在执行任务", `a running teammate row reads 正在执行任务 (got "${rowNote("researcher")}")`);
+assert(!rowNote("researcher").includes("运行中"), "a teammate row no longer reports raw residency wording");
 await act(async () => {
 	[...document.querySelectorAll('[role="dialog"] button')].find((node) => node.textContent.trim() === "重新读取").click();
 	await Promise.resolve();
@@ -304,6 +314,37 @@ await act(async () => {
 	first.root.unmount();
 });
 first.container.remove();
+
+// ── teammate rows carry the three work states; the chip counts completed ───
+// A teammate waiting for work is 待机, one whose turn is running is 正在执行,
+// and one whose work finished is 已完成 (durable even while it is not resident).
+// The composer chip answers "how much of the team finished", so a running
+// teammate must not be counted as completed.
+hostView.members = [
+	LEAD,
+	{ id: "m-idle", name: "scout", role: "teammate", status: "idle", provider: "deepseek-official", model: "deepseek-flash" },
+	{ id: "m-run", name: "researcher", role: "teammate", status: "running", provider: "deepseek-official", model: "deepseek-v4-pro" },
+	{ id: "m-done", name: "editor", role: "teammate", status: "idle", workState: "completed", provider: "deepseek-official", model: "deepseek-flash" }
+];
+const states = await openSheet(SESSION);
+const stateTrigger = states.container.querySelector(".atm_trigger");
+
+assert((stateTrigger?.textContent ?? "").trim() === "1/3 个队员已完成", `the chip counts finished teammates out of every teammate (got "${stateTrigger?.textContent ?? ""}")`);
+assert((stateTrigger?.getAttribute("aria-label") ?? "") === "1/3 个队员已完成", "the chip's accessible name states the completed count");
+assert((stateTrigger?.getAttribute("title") ?? "").includes("1/3 个队员已完成"), "the chip's accessible title states the completed count");
+
+assert(teamRow("scout") !== null && teamRow("researcher") !== null && teamRow("editor") !== null, "all three teammates render as roster rows");
+assert(rowNote("scout") === "队员 · 待机/未委派任务", `an idle teammate reads 待机/未委派任务 (got "${rowNote("scout")}")`);
+assert(rowNote("researcher") === "队员 · 正在执行任务", `a running teammate reads 正在执行任务 (got "${rowNote("researcher")}")`);
+assert(rowNote("editor") === "队员 · 任务已完成", `a finished teammate reads 任务已完成 (got "${rowNote("editor")}")`);
+assert(["scout", "researcher", "editor"].every((name) => !rowNote(name).includes("运行中") && !rowNote(name).includes("空闲")),
+	"teammate rows express work state instead of raw residency wording");
+assert((teamList()?.textContent ?? "").includes("队员 · 3"), "the divider still counts all teammates regardless of state");
+
+await act(async () => {
+	states.root.unmount();
+});
+states.container.remove();
 
 // ── conversation whose Lead has not spawned a teammate yet ─────────────────
 hostView.members = [LEAD];
